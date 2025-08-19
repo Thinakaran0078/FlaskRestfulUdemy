@@ -1,8 +1,13 @@
-version: '3'
 services:
   web:
+    image: my-flask-app:1.0.0
     build: .
     ports:
       - "5005:5000"
-    volumes:
-      - .:/app
+    develop:
+      watch:
+        - path: .
+          target: /app
+          action: sync
+        - path: ./requirements.txt
+          action: rebuild
