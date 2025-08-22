@@ -4,6 +4,7 @@ import secrets
 from flask import Flask, jsonify
 from flask_smorest import Api
 from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
 
 from db import db
 from blocklist import BLOCKLIST
@@ -21,8 +22,6 @@ def create_app(db_url=None):
     def index():
         return {"message": "Welcome to API page"}
 
-    app = Flask(__name__)
-
     app.config['PROPAGATE_EXCEPTIONS'] = True
     app.config['API_TITLE'] = 'Store REST API'
     app.config['API_VERSION'] = 'v1'
@@ -34,7 +33,7 @@ def create_app(db_url=None):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     # app.config["SQLALCHEMY_ECHO"] = True
     db.init_app(app)
-
+    migrate = Migrate(app, db)
     api = Api(app)
 
     app.config["JWT_SECRET_KEY"] = "278256740010415905515574216922849066797"
@@ -94,9 +93,6 @@ def create_app(db_url=None):
             ),
             401,
         )
-
-    with app.app_context():
-        db.create_all()
 
     api.register_blueprint(ItemBlueprint)
     api.register_blueprint(StoreBlueprint)
