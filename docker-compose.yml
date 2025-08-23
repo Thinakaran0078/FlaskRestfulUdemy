@@ -6,8 +6,8 @@ services:
       - "5005:5000"
     develop:
       watch:
+        - path: ./requirements.txt
+          action: rebuild
         - path: .
           target: /app
           action: sync
-        - path: ./requirements.txt
-          action: rebuild
