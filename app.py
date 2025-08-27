@@ -10,6 +10,7 @@ from flask_migrate import Migrate
 from db import db
 from blocklist import BLOCKLIST
 import models
+from dotenv import load_dotenv
 
 from resources.item import blp as ItemBlueprint
 from resources.store import blp as StoreBlueprint
@@ -17,6 +18,7 @@ from resources.tag import blp as TagBlueprint
 from resources.user import blp as UserBlueprint
 
 def create_app(db_url=None):
+    load_dotenv(dotenv_path="/app/.env")
     app = Flask(__name__)
     project_root = Path(app.root_path)   # reliable for both app.py and packages
     db_file = project_root / "data.db"

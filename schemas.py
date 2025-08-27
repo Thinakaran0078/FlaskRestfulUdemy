@@ -48,3 +48,10 @@ class UserSchema(Schema):
     id = fields.Int(dump_only=True)
     username = fields.Str(required=True)
     password = fields.Str(required=True, load_only=True)
+
+class PaginatedStoreSchema(Schema):
+    items    = fields.List(fields.Nested(PlainStoreSchema))
+    page     = fields.Int()
+    per_page = fields.Int()
+    total    = fields.Int()
+    pages    = fields.Int()
