@@ -1,9 +1,10 @@
 import os
 import secrets
 from pathlib import Path
+from tasks import add
 
 from flask import Flask, jsonify
-from flask_smorest import Api
+from flask_smorest import Api, Blueprint
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 
@@ -36,6 +37,8 @@ def create_app(db_url=None):
     app.config['OPENAPI_SWAGGER_UI_URL'] = 'https://cdn.jsdelivr.net/npm/swagger-ui-dist/'
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url or os.getenv('DATABASE_URL', f'sqlite:///{db_file}')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['CELERY_BROKER_URL'] = 'redis://redis:6379/0'
+    app.config['CELERY_RESULT_BACKEND'] = 'redis://redis:6379/0'
     # app.config["SQLALCHEMY_ECHO"] = True
     db.init_app(app)
     migrate = Migrate(app, db)
@@ -103,5 +106,12 @@ def create_app(db_url=None):
     api.register_blueprint(StoreBlueprint)
     api.register_blueprint(TagBlueprint)
     api.register_blueprint(UserBlueprint)
+
+    # inside your create_app(...) just before return app
+    from celery_app import init_celery
+    from tasks_bp import tasks_blp
+
+    init_celery(app)  # picks up CELERY_* from your config
+    api.register_blueprint(tasks_blp)
 
     return app

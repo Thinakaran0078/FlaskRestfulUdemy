@@ -8,3 +8,5 @@ python-dotenv==1.1.0
 psycopg[binary]
 SQLAlchemy==2.0.41
 gunicorn
+celery==5.3.6
+redis==5.0.4
