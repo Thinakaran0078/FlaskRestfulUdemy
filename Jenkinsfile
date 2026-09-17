@@ -16,24 +16,30 @@ pipeline {
             steps {
                 sh '''
                     python3 -m venv .venv
-                    .venv/bin/python -m pip install -r requirements.txt
+                    .venv/bin/python -m pip install -r requirements-dev.txt
                 '''
             }
         }
 
-        stage('Run Tests') {
+        stage('Tests and Coverage') {
             steps {
                 sh '''
+                    mkdir -p reports
                     .venv/bin/python -m pytest tests -v \
-                        --junitxml=reports/junit.xml
+                        --junitxml=reports/junit.xml \
+                        --cov \
+                        --cov-report=term-missing \
+                        --cov-report=xml:reports/coverage.xml
                 '''
             }
+        }
+    } // Close stages BEFORE post
 
-            post {
-                always {
-                    junit 'reports/junit.xml'
-                }
-            }
+    post {
+        always {
+            junit 'reports/junit.xml'
+            archiveArtifacts artifacts: 'reports/coverage.xml',
+                             allowEmptyArchive: true
         }
     }
 }

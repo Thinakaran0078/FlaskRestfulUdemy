@@ -1,0 +1,13 @@
+[run]
+source = .
+relative_files = True
+branch = True
+omit =
+    tests/*
+    .venv/*
+    venv/*
+    code/*
+    */site-packages/*
+
+[report]
+show_missing = True
