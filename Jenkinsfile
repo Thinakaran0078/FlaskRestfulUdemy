@@ -44,6 +44,19 @@ pipeline {
                 }
             }
         }
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    script {
+                        def gate = waitForQualityGate()
+
+                        if (gate.status != 'OK') {
+                            error "Quality gate failed: ${gate.status}"
+                        }
+                    }
+                }
+            }
+        }
     } // Close stages BEFORE post
 
     post {
