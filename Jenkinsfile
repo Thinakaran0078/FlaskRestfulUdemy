@@ -33,6 +33,17 @@ pipeline {
                 '''
             }
         }
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    def scannerHome = tool 'sonar-scanner'
+
+                    withSonarQubeEnv('local-sonarqube') {
+                        sh "\"${scannerHome}/bin/sonar-scanner\""
+                    }
+                }
+            }
+        }
     } // Close stages BEFORE post
 
     post {

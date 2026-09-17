@@ -3,3 +3,7 @@ __pycache__/
 *$py.class
 
 .vscode/
+.venv/
+.coverage
+reports/
+.scannerwork/
