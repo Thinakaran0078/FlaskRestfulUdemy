@@ -57,6 +57,37 @@ pipeline {
                 }
             }
         }
+        stage('Dependency Scan') {
+            steps {
+                sh '''
+                    python3 -m venv .audit-venv
+                    .audit-venv/bin/python -m pip install pip-audit
+
+                    mkdir -p reports
+                    rm -f reports/dependency-audit.txt
+
+                    .audit-venv/bin/python -m pip_audit \
+                        -r requirements.txt \
+                        --strict \
+                        --progress-spinner off \
+                        --format columns \
+                        --output reports/dependency-audit.txt
+                '''
+            }
+
+            post {
+                always {
+                    sh '''
+                        if [ -f reports/dependency-audit.txt ]; then
+                            cat reports/dependency-audit.txt
+                        fi
+                    '''
+
+                    archiveArtifacts artifacts: 'reports/dependency-audit.txt',
+                                     allowEmptyArchive: true
+                }
+            }
+        }
     } // Close stages BEFORE post
 
     post {
