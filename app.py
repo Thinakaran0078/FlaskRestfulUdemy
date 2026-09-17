@@ -71,9 +71,11 @@ def create_app(db_url=None):
 
     @jwt.additional_claims_loader
     def add_claims_to_jwt(identity):
-        if identity == 1:  # Assuming user with ID 1 is an admin
-            return {"is_admin": True}
-        return {"is_admin": False}
+        try:
+            user_id = int(identity)
+        except (TypeError, ValueError):
+            user_id = -1
+        return {"is_admin": user_id == 1}
 
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):

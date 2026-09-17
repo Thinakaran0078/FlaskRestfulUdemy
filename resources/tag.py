@@ -14,14 +14,19 @@ class TagInStore(MethodView):
     @jwt_required()
     @blp.response(200, TagSchema(many=True))
     def get(self, store_id):
-        store = StoreModel.query.get_or_404(store_id)
+        store = db.session.get(StoreModel, store_id)
+        if store is None:
+            abort(404, message="Store not found.")
 
         return store.tags.all()
-    
+
     @jwt_required()
     @blp.arguments(TagSchema)
     @blp.response(201, TagSchema)
     def post(self, tag_data, store_id):
+        store = db.session.get(StoreModel, store_id)
+        if store is None:
+            abort(404, message="Store not found.")
         tag = TagModel(**tag_data, store_id=store_id)
 
         try:
@@ -29,7 +34,7 @@ class TagInStore(MethodView):
             db.session.commit()
         except SQLAlchemyError as e:
             abort(500, message=str(e))
-        
+
         return tag
     
 @blp.route("/item/<int:item_id>/tag/<int:tag_id>")
@@ -37,8 +42,12 @@ class LinkTagsToItem(MethodView):
     @jwt_required()
     @blp.response(201, TagSchema)
     def post(self, item_id, tag_id):
-        item = ItemModel.query.get_or_404(item_id)
-        tag = TagModel.query.get_or_404(tag_id)
+        item = db.session.get(ItemModel, item_id)
+        if item is None:
+            abort(404, message="Item not found.")
+        tag = db.session.get(TagModel, tag_id)
+        if tag is None:
+            abort(404, message="Tag not found.")
 
         item.tags.append(tag)
         try:
@@ -48,12 +57,16 @@ class LinkTagsToItem(MethodView):
             abort(500, message="An error occurred while linking the tag to the item.")
 
         return tag
-    
+
     @jwt_required()
     @blp.response(200, TagandItemSchema)
     def delete(self, item_id, tag_id):
-        item = ItemModel.query.get_or_404(item_id)
-        tag = TagModel.query.get_or_404(tag_id)
+        item = db.session.get(ItemModel, item_id)
+        if item is None:
+            abort(404, message="Item not found.")
+        tag = db.session.get(TagModel, tag_id)
+        if tag is None:
+            abort(404, message="Tag not found.")
 
         item.tags.remove(tag)
         try:
@@ -70,7 +83,9 @@ class Tag(MethodView):
     @jwt_required()
     @blp.response(200, TagSchema)
     def get(self, tag_id):
-        tag = TagModel.query.get_or_404(tag_id)
+        tag = db.session.get(TagModel, tag_id)
+        if tag is None:
+            abort(404, message="Tag not found.")
         return tag
 
     @jwt_required()
@@ -85,9 +100,13 @@ class Tag(MethodView):
         description="Returned if the tag is assigned to one or more items. In this case, the tag is not deleted.",
     )
     def delete(self, tag_id):
-        tag = TagModel.query.get_or_404(tag_id)
+        tag = db.session.get(TagModel, tag_id)
+        if tag is None:
+            abort(404, message="Tag not found.")
 
-        if not tag.items:
-            db.session.delete(tag)
-            db.session.commit()
-            return {"message": "Tag deleted."}
+        if tag.items:
+            abort(400, message="Tag is assigned to one or more items and cannot be deleted.")
+
+        db.session.delete(tag)
+        db.session.commit()
+        return {"message": "Tag deleted."}

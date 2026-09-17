@@ -5,6 +5,9 @@ from models.store import StoreModel
 from models.tag import TagModel
 from models.user import UserModel
 
+from sqlalchemy.exc import IntegrityError
+import pytest
+
 
 def test_store_model_defaults_and_relationships(app):
     with app.app_context():
@@ -45,11 +48,9 @@ def test_item_name_must_be_unique(app):
         db.session.commit()
 
         db.session.add(ItemModel(name="Widget", price=2.0, store=store))
-        try:
+        with pytest.raises(IntegrityError):
             db.session.commit()
-            assert False, "expected an IntegrityError for a duplicate item name"
-        except Exception:
-            db.session.rollback()
+        db.session.rollback()
 
 
 def test_tag_belongs_to_store_and_links_to_items_via_item_tags(app):
@@ -85,8 +86,6 @@ def test_username_must_be_unique(app):
         db.session.commit()
 
         db.session.add(UserModel(username="alice", password="hash2"))
-        try:
+        with pytest.raises(IntegrityError):
             db.session.commit()
-            assert False, "expected an IntegrityError for a duplicate username"
-        except Exception:
-            db.session.rollback()
+        db.session.rollback()

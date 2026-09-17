@@ -15,7 +15,7 @@ services:
           action: sync+restart
         - path: .
           target: /app
-          action: sync
+          action: sync+restart
     depends_on:
       - db
   db:

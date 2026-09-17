@@ -74,12 +74,16 @@ class User(MethodView):
     @jwt_required()
     @blp.response(200, UserSchema)
     def get(self, user_id):
-        user = UserModel.query.get_or_404(user_id)
+        user = db.session.get(UserModel, user_id)
+        if user is None:
+            abort(404, message="User not found.")
         return user
 
     @jwt_required()
     def delete(self, user_id):
-        user = UserModel.query.get_or_404(user_id)
+        user = db.session.get(UserModel, user_id)
+        if user is None:
+            abort(404, message="User not found.")
         db.session.delete(user)
         db.session.commit()
         return {"message": "User deleted."}, 200

@@ -30,18 +30,14 @@ def test_create_and_list_tags_for_a_store(client):
     assert [t["name"] for t in list_response.get_json()] == ["Sale"]
 
 
-def test_create_tag_does_not_validate_the_store_exists(client):
-    """TagInStore.post never calls StoreModel.get_or_404, and SQLite does not
-    enforce the store_id foreign key by default, so a tag can be created
-    against a non-existent store id without error."""
+def test_create_tag_validates_the_store_exists(client):
     tokens = register_and_login(client)
 
     response = client.post(
         "/store/999/tag", json={"name": "Sale"}, headers=auth_header(tokens["access_token"])
     )
 
-    assert response.status_code == 201
-    assert response.get_json()["name"] == "Sale"
+    assert response.status_code == 404
 
 
 def test_get_tag_returns_404_for_unknown_id(client):
@@ -80,13 +76,8 @@ def test_delete_tag_fails_while_still_linked_to_an_item(client):
 
     response = client.delete(f"/tag/{tag['id']}", headers=headers)
 
-    # Tag.delete only deletes when `not tag.items`; when a tag is still
-    # linked it falls through and implicitly returns None. flask-smorest
-    # still reports the decorated 202 status with a null body instead of
-    # the documented 400 "tag assigned to items" alt-response, and the tag
-    # is silently NOT deleted.
-    assert response.status_code == 202
-    assert response.get_json() is None
+    assert response.status_code == 400
+    assert "assigned to one or more items" in response.get_json()["message"]
 
     still_there = client.get(f"/tag/{tag['id']}", headers=headers)
     assert still_there.status_code == 200

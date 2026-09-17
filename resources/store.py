@@ -18,12 +18,16 @@ class Store(MethodView):
     @jwt_required()
     @blp.response(200, StoreSchema)
     def get(self, store_id):
-        store = StoreModel.query.get_or_404(store_id)
+        store = db.session.get(StoreModel, store_id)
+        if store is None:
+            abort(404, message="Store not found.")
         return store
 
     @jwt_required()
     def delete(self, store_id):
-        store = StoreModel.query.get_or_404(store_id)
+        store = db.session.get(StoreModel, store_id)
+        if store is None:
+            abort(404, message="Store not found.")
         db.session.delete(store)
         db.session.commit()
         return {"message": "Store deleted."}

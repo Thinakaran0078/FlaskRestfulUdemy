@@ -85,18 +85,21 @@ def test_update_missing_item_creates_it(client):
 
 
 def test_delete_item_requires_admin_privilege(client):
-    """`is_admin` is derived from the JWT identity: additional_claims_loader
-    compares the identity to the int 1, but identities are always created as
-    strings (str(user.id)), so this check never evaluates truthy for any
-    account - including the very first registered user."""
     tokens = register_and_login(client)
     store = create_store(client, auth_header(tokens["access_token"]))
     item = create_item(client, auth_header(tokens["refresh_token"]), store["id"]).get_json()
 
-    response = client.delete(f"/item/{item['id']}", headers=auth_header(tokens["access_token"]))
+    # First user is admin because their numeric id is 1.
+    admin_response = client.delete(f"/item/{item['id']}", headers=auth_header(tokens["access_token"]))
+    assert admin_response.status_code == 200
+    assert admin_response.get_json() == {"message": "Item deleted."}
 
-    assert response.status_code == 401
-    assert response.get_json()["message"] == "Admin privilege required."
+    second_user = register_and_login(client, username="bob", password="secret")
+    store_2 = create_store(client, auth_header(second_user["access_token"]), name="Second Store")
+    item_2 = create_item(client, auth_header(second_user["refresh_token"]), store_2["id"], name="Other Widget").get_json()
+    forbidden_response = client.delete(f"/item/{item_2['id']}", headers=auth_header(second_user["access_token"]))
+    assert forbidden_response.status_code == 401
+    assert forbidden_response.get_json()["message"] == "Admin privilege required."
 
 
 def test_delete_item_requires_authentication(client):

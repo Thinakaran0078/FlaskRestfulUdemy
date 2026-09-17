@@ -16,15 +16,19 @@ class Item(MethodView):
     @jwt_required()
     @blp.response(200, ItemSchema)
     def get(self, item_id):
-        item = ItemModel.query.get_or_404(item_id)
+        item = db.session.get(ItemModel, item_id)
+        if item is None:
+            abort(404, message="Item not found.")
         return item
- 
+
     @jwt_required()
     def delete(self, item_id):
         jwt = get_jwt()
         if not jwt.get("is_admin", False):
             abort(401, message="Admin privilege required.")
-        item = ItemModel.query.get_or_404(item_id)
+        item = db.session.get(ItemModel, item_id)
+        if item is None:
+            abort(404, message="Item not found.")
         db.session.delete(item)
         db.session.commit()
         return {"message": "Item deleted."}
@@ -32,7 +36,7 @@ class Item(MethodView):
     @blp.arguments(ItemsUpdateSchema)
     @blp.response(200, ItemSchema)
     def put(self, item_data, item_id):
-        item = ItemModel.query.get(item_id)
+        item = db.session.get(ItemModel, item_id)
         if item:
             item.price = item_data["price"]
             item.name = item_data["name"]
@@ -41,7 +45,7 @@ class Item(MethodView):
 
         db.session.add(item)
         db.session.commit()
-        
+
         return item
 
 
