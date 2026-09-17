@@ -1,14 +1,15 @@
 import pytest
-
+import secrets
 from app import create_app
 from db import db
 
 
 @pytest.fixture()
-def app():
+def app(monkeypatch):
+    monkeypatch.setenv("JWT_SECRET_KEY", secrets.token_hex(32))
+
     app = create_app("sqlite://")
     app.config.update(TESTING=True)
-
     # Only hold the app context while creating/dropping tables. Each request
     # made through the test client pushes and tears down its own app
     # context (like a real WSGI request), so a session left in a failed
