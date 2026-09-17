@@ -38,7 +38,7 @@ pipeline {
     post {
         always {
             junit 'reports/junit.xml'
-            archiveArtifacts artifacts: 'reports/coverage.xml',
+            archiveArtifacts artifacts: 'reports/*.xml',
                              allowEmptyArchive: true
         }
     }
