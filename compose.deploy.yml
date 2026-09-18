@@ -1,0 +1,54 @@
+name: flask-deploy
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: myapp
+    volumes:
+      - deploy_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d myapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  web:
+    image: localhost:15000/flask-restful-udemy:${IMAGE_TAG:?Set IMAGE_TAG}
+    env_file:
+      - "${DEPLOY_ENV_FILE:-.env}"
+    ports:
+      - "127.0.0.1:5006:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery:
+    image: localhost:15000/flask-restful-udemy:${IMAGE_TAG:?Set IMAGE_TAG}
+    env_file:
+      - "${DEPLOY_ENV_FILE:-.env}"
+    command: celery -A celery_worker.celery worker --loglevel=info --concurrency=2
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  deploy_pgdata:

@@ -1,0 +1,50 @@
+---
+- name: Deploy Flask to local Docker Desktop
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    project_dir: "{{ playbook_dir }}/.."
+    compose_command:
+      - docker
+      - compose
+      - -f
+      - compose.deploy.yml
+
+  module_defaults:
+    ansible.builtin.command:
+      chdir: "{{ project_dir }}"
+
+  tasks:
+    - name: Pull the published application image
+      ansible.builtin.command:
+        argv: "{{ compose_command + ['pull', 'web', 'celery'] }}"
+
+    - name: Wait for PostgreSQL and Redis
+      ansible.builtin.command:
+        argv: "{{ compose_command + ['up', '-d', '--wait', '--wait-timeout', '120', 'db', 'redis'] }}"
+
+    - name: Deploy web and Celery
+      ansible.builtin.command:
+        argv: "{{ compose_command + ['up', '-d', '--no-build', 'web', 'celery'] }}"
+
+    - name: Verify the web application responds
+      ansible.builtin.command:
+        argv: "{{ compose_command + ['exec', '-T', 'web', 'python', '-c', health_check] }}"
+      vars:
+        health_check: |
+          import json
+          import urllib.request
+          with urllib.request.urlopen(
+              "http://127.0.0.1:8000/", timeout=5
+          ) as response:
+              assert response.status == 200
+              data = json.load(response)
+              assert data["message"] == "Welcome to API page"
+          print("Application health check passed")
+      register: health_result
+      until: health_result.rc == 0
+      retries: 12
+      delay: 5
+      changed_when: false

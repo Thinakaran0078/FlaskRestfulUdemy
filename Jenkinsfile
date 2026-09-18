@@ -3,6 +3,7 @@ pipeline {
 
     options {
         skipDefaultCheckout(true)
+        disableConcurrentBuilds()
     }
 
     stages {
@@ -112,6 +113,25 @@ pipeline {
                     docker push \
                         "localhost:15000/flask-restful-udemy:${BUILD_NUMBER}"
                 '''
+            }
+        }
+        stage('Deploy with Ansible') {
+            steps {
+                withCredentials([
+                    file(
+                        credentialsId: 'flask-deploy-env',
+                        variable: 'DEPLOY_ENV_FILE'
+                    )
+                ]) {
+                    sh '''
+                        set +x
+                        export IMAGE_TAG="$BUILD_NUMBER"
+
+                        /var/jenkins_home/ansible-venv/bin/ansible-playbook \
+                            -i localhost, \
+                            ansible/deploy.yml
+                    '''
+                }
             }
         }
     } // Close stages BEFORE post
