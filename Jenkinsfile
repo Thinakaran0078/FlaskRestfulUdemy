@@ -88,6 +88,21 @@ pipeline {
                 }
             }
         }
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    docker version
+
+                    docker build \
+                        --tag "flask-restful-udemy:${BUILD_NUMBER}" \
+                        .
+
+                    docker image inspect \
+                        "flask-restful-udemy:${BUILD_NUMBER}" \
+                        --format '{{.Id}}'
+                '''
+            }
+        }
     } // Close stages BEFORE post
 
     post {
