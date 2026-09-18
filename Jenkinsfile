@@ -103,6 +103,17 @@ pipeline {
                 '''
             }
         }
+        stage('Push Docker Image') {
+            steps {
+                sh '''
+                    docker tag "flask-restful-udemy:${BUILD_NUMBER}" \
+                        "localhost:15000/flask-restful-udemy:${BUILD_NUMBER}"
+
+                    docker push \
+                        "localhost:15000/flask-restful-udemy:${BUILD_NUMBER}"
+                '''
+            }
+        }
     } // Close stages BEFORE post
 
     post {
