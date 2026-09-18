@@ -1,18 +1,20 @@
 FROM python:3.13-slim
 
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt \
     && groupadd --gid 10001 appuser \
-    && useradd --uid 10001 --gid appuser --create-home appuser \
-    && chown appuser:appuser /app
+    && useradd --uid 10001 --gid appuser --create-home appuser
 
-COPY --chown=appuser:appuser app.py db.py blocklist.py schemas.py ./
-COPY --chown=appuser:appuser celery_app.py celery_worker.py tasks.py tasks_bp.py ./
-COPY --chown=appuser:appuser models/ ./models/
-COPY --chown=appuser:appuser resources/ ./resources/
+COPY --chown=root:root --chmod=644 app.py db.py blocklist.py schemas.py ./
+COPY --chown=root:root --chmod=644 celery_app.py celery_worker.py tasks.py tasks_bp.py ./
+COPY --chown=root:root --chmod=755 models/ ./models/
+COPY --chown=root:root --chmod=755 resources/ ./resources/
 
 USER appuser
 
